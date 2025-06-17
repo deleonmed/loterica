@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Conferir Bolão da Lotofácil</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input, button { margin: 10px 0; }
+    #resultado { margin-top: 20px; font-weight: bold; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Conferir Bolão da Lotofácil</h1>
+  <p>Envie uma imagem do comprovante. O sistema detectará todos os jogos do bolão.</p>
+  <input type="file" accept="image/*" id="imagemInput">
+  <button onclick="processarImagem()">Conferir</button>
+
+  <div id="resultado"></div>
+
+  <script>
+    // Resultado oficial fixo
+    const numerosOficiais = ["01", "02", "03", "04", "06", "07", "09", "10", "12", "13", "15", "17", "19", "20", "25"];
+
+    async function processarImagem() {
+      const input = document.getElementById("imagemInput");
+      const resultadoDiv = document.getElementById("resultado");
+
+      if (!input.files.length) {
+        alert("Envie uma imagem do comprovante.");
+        return;
+      }
+
+      resultadoDiv.textContent = "Lendo imagem...";
+
+      const image = input.files[0];
+
+      const { data: { text } } = await Tesseract.recognize(image, 'por', {
+        logger: m => console.log(m)
+      });
+
+      // Extrair todos os números com 2 dígitos
+      const numerosExtraidos = text.match(/\b\d{2}\b/g);
+
+      if (!numerosExtraidos || numerosExtraidos.length < 15) {
+        resultadoDiv.textContent = "Não foi possível identificar os jogos. Verifique a qualidade da imagem.";
+        return;
+      }
+
+      // Separar jogos a cada 15 números
+      const jogos = [];
+      for (let i = 0; i < numerosExtraidos.length; i += 15) {
+        const jogo = numerosExtraidos.slice(i, i + 15);
+        if (jogo.length === 15) {
+          jogos.push(jogo);
+        }
+      }
+
+      // Conferir cada jogo
+      let output = `Resultado Oficial: ${numerosOficiais.join(', ')}\n\n`;
+      jogos.forEach((jogo, index) => {
+        const acertos = jogo.filter(num => numerosOficiais.includes(num));
+        output += `🎫 Jogo ${index + 1}: ${jogo.join(', ')}\n`;
+        output += `✅ Acertos: ${acertos.length} (${acertos.join(', ')})\n\n`;
+      });
+
+      resultadoDiv.textContent = output;
+    }
+  </script>
+</body>
+</html>
